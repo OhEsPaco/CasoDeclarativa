@@ -39,6 +39,7 @@ resolucion_ent(ELEMENTO, ENTRADA, SALIDA):-
 
 /*Toma un elemento y una lista. Si el elemento dado es 'a'
 recorre la lista eliminando 'no(a)'*/
+resolucion(X,X,X).
 resolucion(_, [], []) :- !.
 resolucion(X, [no(X)|Xs], Y) :- !, resolucion(X, Xs, Y).
 resolucion(no(X), [X|Xs], Y) :- !, resolucion(no(X), Xs, Y).
