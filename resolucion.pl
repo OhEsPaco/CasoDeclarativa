@@ -1,49 +1,58 @@
-%esCorrecto([[p,q,r],[no(p),q,r],[no(r)],[no(q)]]).
-:- op(  555,  fx, [ no ]).
+:-  op(900,  fy,  [ no ]).
+:-  op(1050,  yfx,  [ -> , <-> ]).
+:-  op(500,  yfx,  [ ^ , v ]).
 
-/*Comprueba si un argumento es correcto*/
-esCorrecto(LIST):- elegir(LIST, P1), elegir(LIST, P2), regla_de_resolucion(P1,P2, SALIDA),
-  (length(SALIDA,0)-> write("El argumento es correcto!"), nl;
-  (length(P1, LP1),length(P2,LP2), length(SALIDA,LSALIDA),LSALIDA =:= LP1 + LP2 ->esCorrecto(LIST) ;esCorrecto([SALIDA|LIST]))).
+atomo(A):-atom(A).
+atomo(no(A)):-atom(A).
 
-prueba(LP1,LP2, LSALIDA):-LSALIDA =:= LP1 + LP2.
-/*Elige aleatoriamente un elemento en una lista*/
-elegir([], []).
-elegir(List, Elt) :-
-    length(List, Length),
-    random(0, Length, Index),
-    nth0(Index, List, Elt).
+particion([],[]).
+particion([H|T],L):-partir(H,H1),particion(T,T1),append([H1],T1,L).
 
-/*Aplica la regla de resolucion sobre dos listas de la forma [a,b,c]
-que se traducen como a v b v c.
-Primero las limpiamos para evitar duplicados.*/
-regla_de_resolucion(PROD1,PROD2,SALIDA):-
-  (atom(PROD1)->P1 = [PROD1]; P1 = PROD1),
-  (atom(PROD2)->P2 = [PROD2]; P2 = PROD2),
+clausalizar([],[]).
+clausalizar([H|T],B):-clausal(H,H1),clausalizar(T,T1),append([H1],T1,B).
 
-regla_de_resolucion_iterar(P1,P2, SALIDA).
+clausal(A -> B, C):-clausal(no(A) v B,C),!.
+clausal(A <-> B, C):-clausal((A -> B) ^ (B -> A),C),!.
+clausal(no(no(A)),B):-clausal(A,B),!.
+clausal(no(A ^ B), C):-clausal(no(A) v no(B),C),!.
+clausal(no(A v B), C):-clausal(no(A) ^ no(B),C),!.
+clausal(no(A -> B),C):-clausal(no(no(A) v B),C),!.
+clausal(no(A <-> B),C):-clausal(no((A -> B) ^ (B -> A)),C),!.
+clausal(A v B, C v D):-clausal(A,C),clausal(B,D),!.
+clausal(A ^ B, C ^ D):-clausal(A,C),clausal(B,D),!.
+clausal(A,A):-atomo(A).
 
-regla_de_resolucion_iterar([H|T], PROD, SALIDA):-
-  resolucion_ent(H, PROD, SALIDA2),
-  regla_de_resolucion_iterar(T, SALIDA2, SALIDA).
+partir(A, [A]):-atomo(A).
+partir(A ^ B,L):-
+  partir(A, A1),
+  partir(B, B1),
+  append(A1,B1,L).
 
-%regla_de_resolucion_iterar([],SALIDA,S2):-limpiar(SALIDA, S2).
-regla_de_resolucion_iterar([],SALIDA,SALIDA).
-
-/*Toma un elemento y una lista. Si la negación del elemento se encuentra en la
-lista lo elimina. Si no se encuentra en la lista lo añade*/
-resolucion_ent(ELEMENTO, ENTRADA, SALIDA):-
-  (member(no(ELEMENTO), ENTRADA)->resolucion(ELEMENTO, ENTRADA, SALIDA);
-  resolucion(ELEMENTO, ENTRADA, SALIDA_RESOLUCION),
-  append([ELEMENTO], SALIDA_RESOLUCION, SALIDA)).
-
-/*Toma un elemento y una lista. Si el elemento dado es 'a'
-recorre la lista eliminando 'no(a)'*/
-resolucion(X,X,X).
-resolucion(_, [], []) :- !.
-resolucion(X, [no(X)|Xs], Y) :- !, resolucion(X, Xs, Y).
-resolucion(no(X), [X|Xs], Y) :- !, resolucion(no(X), Xs, Y).
-resolucion(X, [T|Xs], Y) :- !, resolucion(X, Xs, Y2), append([T], Y2, Y).
+partir(A v B,L):-
+  partir(A, A1),
+  partir(B, B1),
+  append(A1,B1,L).
 
 /*Limpia duplicados. Aprovechamos que sort no los añade*/
 limpiar(ENTRADA, SALIDA):- sort(ENTRADA, SALIDA).
+
+inicializar(A, E):- clausalizar(A, C),particion(C,E).
+esCorrecto(A):-inicializar(A,E),verificar(E).
+
+printInfo(P1, P2, P3):-
+  write(P1), write(" + "), write(P2), write(" = "), write(P3), nl.
+
+verificar([]):-write("El argumento es correcto!"), nl,!.
+verificar([A]):-(regla_de_resolucion(A,B),length(B,0)->write("El argumento es correcto!"), nl;write("El argumento es incorrecto!"), nl, fail),!.
+verificar([P1, P2| COLA]):-regla_de_resolucion(P1,P2, S),limpiar(S,SALIDA),printInfo(P1,P2,SALIDA),
+(length(SALIDA,0)->verificar(SALIDA);verificar([SALIDA|COLA])).
+
+regla_de_resolucion(A,B,C):-append(A,B,AB),regla_de_resolucion(AB,C).
+regla_de_resolucion(A,B):-limpiar(A,C),resolucion_core(C,C,B).
+
+resolucion_core([],_,[]).
+resolucion_core([H|T],A,L):-
+  (eliminar(H,A)->resolucion_core(T,A,L);resolucion_core(T,A,L1),append([H],L1,L)).
+
+eliminar(A,L):-member(no(A),L).
+eliminar(no(A),L):-member(A,L).
