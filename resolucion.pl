@@ -1,58 +1,95 @@
-:-  op(900,  fy,  [ no ]).
-:-  op(1050,  yfx,  [ -> , <-> ]).
-:-  op(500,  yfx,  [ ^ , v ]).
+:-op(200,fx,~).
+:-op(400,xfy,#).
+:-op(400,xfy,&).
+:-op(700,xfy,->).
+:-op(700,xfy,<->).
 
-atomo(A):-atom(A).
-atomo(no(A)):-atom(A).
+translate(X) :-
+implout(X,Xl), /* Stage 1 */
+negin(Xl,X2), /* Stage 2 */
+skolem(X2,X3,[]), /* Stage 3 */
+univout(X3,X4), /* Stage 4 */
+conjn(X4,X5), /* Stage 5 */
+clausify(X5,Clauses,[]), /* Stage 6 */
+pclauses(Clauses). /* Print out clauses */
 
-particion([],[]).
-particion([H|T],L):-partir(H,H1),particion(T,T1),append([H1],T1,L).
+implout((P<->Q),((P1 & Q1)#(~P1 & ~Q1))):-!,implout(P,P1),implout(Q,Q1).
+implout((P->Q),(~P1 # Q1)):-!,implout(P,P1),implout(Q,Q1).
+implout(all(X,P),all(X,P1)):-!,implout(P,P1).
+implout(exists(X,P),exists(X,P1)):-!,implout(P,P1).
+implout((P&Q),(P1 & Q1)):-!,implout(P,P1),implout(Q,Q1).
+implout((P#Q),(P1 # Q1)):-!,implout(P,P1),implout(Q,Q1).
+implout((~P),(~P1)):-!,implout(P,P1).
+implout(P,P).
 
-clausalizar([],[]).
-clausalizar([H|T],B):-clausal(H,H1),clausalizar(T,T1),append([H1],T1,B).
+%% Moving Negation Inwards
+negin((~P),P1):- !, neg(P,P1).
+negin(all(X,P),all(X,P1)):- !, negin(P,P1).
+negin(exists(X,P),exists(X,P1)):-!, negin(P,P1).
+negin((P & Q),(P1 & Q1)):- !, negin(P,P1), negin(Q,Q1).
+negin((P # Q),(P1 # Q1)):- !, negin(P,P1), negin(Q,Q1).
+negin(P,P).
+neg((~P),P1):-!,negin(P,P1).
+neg(all(X,P),exists(X,P1)):-!,neg(P,P1).
+neg(exists(X,P),all(X,P1)):-!,neg(P,P1).
+neg((P&Q),(P1#Q1)):-!,neg(P,P1),neg(Q,Q1).
+neg((P#Q),(P1&Q1)):-!,neg(P,P1),neg(Q,Q1).
+neg(P,(~P)).
 
-clausal(A -> B, C):-clausal(no(A) v B,C),!.
-clausal(A <-> B, C):-clausal((A -> B) ^ (B -> A),C),!.
-clausal(no(no(A)),B):-clausal(A,B),!.
-clausal(no(A ^ B), C):-clausal(no(A) v no(B),C),!.
-clausal(no(A v B), C):-clausal(no(A) ^ no(B),C),!.
-clausal(no(A -> B),C):-clausal(no(no(A) v B),C),!.
-clausal(no(A <-> B),C):-clausal(no((A -> B) ^ (B -> A)),C),!.
-clausal(A v B, C v D):-clausal(A,C),clausal(B,D),!.
-clausal(A ^ B, C ^ D):-clausal(A,C),clausal(B,D),!.
-clausal(A,A):-atomo(A).
+%% Skolemising
+skolem(all(X,P),all(X,P1),Vars):-!,skolem(P,P1,[X|Vars]).
+skolem(exists(X,P),P2,Vars):- !, gensym(f,F),Sk=..[F|Vars],
+							subst(X,Sk,P,P1),
+							skolem(P1,P2,Vars).
+skolem((P # Q),(P1 # Q1),Vars):-
+						!,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
+skolem((P & Q),(P1 & Q1),Vars):-
+						!,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
+skolem(P,P,_).
 
-partir(A, [A]):-atomo(A).
-partir(A ^ B,L):-
-  partir(A, A1),
-  partir(B, B1),
-  append(A1,B1,L).
+univout(all(_,P),P1):- !, univout(P,P1).
+univout((P & Q),(P1 & Q1)) :-!, univout(P,P1), univout(Q,Q1). 
+univout((P#Q),(P1 # Q1)):-!,univout(P,P1),univout(Q,Q1).
+univout(P,P).
 
-partir(A v B,L):-
-  partir(A, A1),
-  partir(B, B1),
-  append(A1,B1,L).
+conjn((P#Q),R):-!,conjn(P,P1),conjn(Q,Q1),conjn1((P1 # Q1),R).
+conjn((P&Q),(P1&Q1)):-!,conjn(P,P1),conjn(Q,Q1).
+conjn(P,P).
 
-/*Limpia duplicados. Aprovechamos que sort no los añade*/
-limpiar(ENTRADA, SALIDA):- sort(ENTRADA, SALIDA).
+conjn1(((P&Q)#R),(P1 & Q1)):-!,conjn((P#R),P1),conjn((Q#R),Q1).
+conjn1((P#(Q & R)),(P1 & Q1)):-!,conjn((P#Q),P1),conjn((P#R),Q1).
+conjn1(P,P).
 
-inicializar(A, E):- clausalizar(A, C),particion(C,E).
-esCorrecto(A):-inicializar(A,E),verificar(E).
+%% Putting into Clauses
 
-printInfo(P1, P2, P3):-
-  write(P1), write(" + "), write(P2), write(" = "), write(P3), nl.
+clausify((P & Q),C1,C2) :-
+	!, clausify(P,C1,C3), clausify(Q,C3,C2). 
 
-verificar([]):-write("El argumento es correcto!"), nl,!.
-verificar([A]):-(regla_de_resolucion(A,B),length(B,0)->write("El argumento es correcto!"), nl;write("El argumento es incorrecto!"), nl, fail),!.
-verificar([P1, P2| COLA]):-regla_de_resolucion(P1,P2, S),limpiar(S,SALIDA),printInfo(P1,P2,SALIDA),
-(length(SALIDA,0)->verificar(SALIDA);verificar([SALIDA|COLA])).
+clausify(P,[cl(A,B)|Cs],Cs) :-
+	inclause(P,A,[],B,[]),!.
+clausify(_,C,C).
+inclause((P # Q),A,A1,B,B1):-
+	!,inclause(P,A2,A1,B2,B1), inclause(Q,A,A2,B,B2).
+inclause((~P),A,A,Bl,B) :-
+	!, notin(P,A), putin(P,B,Bl).
+	inclause(P,A1,A,B,B) :- notin(P,B), putin(P,A,A1).
+notin(X,[X|_]) :-!, fail.
+notin(X,[_|L]):-!, notin(X,L).
+notin(_,[]).
+putin(X,[],[X]):- !.
+putin(X,[X|L],[X|L]):- !.
+putin(X,[Y|L],[Y|L1]):- putin(X,L,L1).
 
-regla_de_resolucion(A,B,C):-append(A,B,AB),regla_de_resolucion(AB,C).
-regla_de_resolucion(A,B):-limpiar(A,C),resolucion_core(C,C,B).
 
-resolucion_core([],_,[]).
-resolucion_core([H|T],A,L):-
-  (eliminar(H,A)->resolucion_core(T,A,L);resolucion_core(T,A,L1),append([H],L1,L)).
-
-eliminar(A,L):-member(no(A),L).
-eliminar(no(A),L):-member(A,L).
+pclauses([]) :- !, nl, nl.
+pclauses([cl(A,B) |Cs]) :-
+pclause(A,B), nl, pclauses(Cs).
+pclause(L,[]) :-!, pdisj(L), write('.').
+pclause([],L) :-!, write(':-'), pconj(L), write('.').
+pclause(Ll,L2) :-pdisj(Ll),write(' :- '), pconj(L2), write('.').
+pdisj([L]) :- !, write(L).
+%pdisj([L|Ls]) :- write(L), write(';'), pdisj(Ls). 
+pdisj([L|Ls]) :- write(L), write(' # '), pdisj(Ls). 
+pconj([L]):-!,write(L).
+%pconj([L|Ls]):-write(L),write('.'),pconj(Ls).
+pconj([L|Ls]):-write(L),write(' & '),pconj(Ls).
