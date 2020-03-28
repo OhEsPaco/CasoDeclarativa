@@ -105,7 +105,7 @@ esArgumentoCorrecto(Premisas,Conclussion):-translate(Premisas,Conclussion,Clause
 %sld(Clausulas,N):-N<10000,NN is N + 1,Clausulas=[H|T],resolver(H,T,Resolvente,Compatible),((Resolvente\==cl([],[]))->
 %((Compatible=no)->(sld(T,NN));(append([Resolvente|T],[H],NClausulas),sld(NClausulas,NN)));nl,write(Resolvente),true).
 
-
+%Yo diria que es la mejor
 sld([H|T]):-resolver(H,T,Resolvente,Compatible),
 ((Resolvente\==cl([],[]))->((Compatible=no)->(sld(T));
 (sld([Resolvente|T])));
