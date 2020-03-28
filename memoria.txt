@@ -1,0 +1,48 @@
+Caso de estudio declarativa 
+Primero mediante el predicado op(prioridad, tipo de función, valor) hemos definido los siguientes símbolos lógicos para la creación de nuestros predicados.
+:-op(200,fx,~). (negación)
+:-op(400,xfy,#). (disyunción lógica)
+:-op(400,xfy,&). (Conjunción lógica)
+:-op(700,xfy,->). (Condicional)
+:-op(700,xfy,<->). (Bicondicional)
+
+Mediante el predicado transformar vamos a pasar de un predicado a un conjunto de clausulas.
+transformar(X) :-
+elimp(X,Xl), /* Fase 1 */ (elimina los implicadores)
+negacion(Xl,X2), /* Fase 2 */ (niega las clausulas)
+skolem(X2,X3,[]), /* Fase 3 */ (skolemizacion)
+univout(X3,X4), /* Fase 4 */
+conjn(X4,X5), /* Fase 5 */
+clausify(X5,Clauses,[]), /* Fase 6 */ (Obtiene las clausulas)
+pclauses(Clauses). /* Imprimir Clausulas */ (Muestra las clausulas por pantalla)
+Este proceso de transformación es conocido como transformación en árbol, ya que los predicados puedes representarse de esa manera, para conseguir esto se llevan a cabo las diversas fases que aparecen arriba escritas.
+1 Fase: eliminación de implicadores
+Mediante el predicado elimp() eliminaremos los implicadores de los predicados.
+elimp((P<->Q),((P1 & Q1)#(~P1 & ~Q1))):-!,elimp(P,P1),elimp(Q,Q1). (Transforma el bicondicinal)
+elimp((P->Q),(~P1 # Q1)):-!,elimp(P,P1),elimp(Q,Q1). (Transforma el condicinal)
+elimp(all(X,P),all(X,P1)):-!,elimp(P,P1). (Comprueba todas las posibilidades)
+elimp(exists(X,P),exists(X,P1)):-!,elimp(P,P1). (Se comprueba si existe el elemento)
+elimp((P&Q),(P1 & Q1)):-!,elimp(P,P1),elimp(Q,Q1). (Transforma la conjuncion)
+elimp((P#Q),(P1 # Q1)):-!,elimp(P,P1),elimp(Q,Q1). (Transforma la disyunción)
+elimp((~P),(~P1)):-!,elimp(P,P1). (Transforma la negacion)
+elimp(P,P). (Caso base)
+2 fase: introducción de la negación 
+En esta fase se utilizan dos predicados negación() que devuleve una formula con el proceso de introducción ya realizado, y neg() que realiza la negación de la formula.
+negacion((~P),P1):- !, neg(P,P1). (Se transforma la formula P)
+negacion((P & Q),(P1 & Q1)):- !, negacion(P,P1), negacion(Q,Q1). (Se transforman las fórmulas P y Q)
+negacion((P # Q),(P1 # Q1)):- !, negacion(P,P1), negacion(Q,Q1). (Se transforman las fórmulas P y Q)
+negacion(P,P). (Caso base)
+neg((~P),P1):-!,negacion(P,P1). (negación de la formula P)
+neg((P&Q),(P1#Q1)):-!,neg(P,P1),neg(Q,Q1). (Se niega el primer elemento del predicado, así como se niegan las fórmulas interiores)
+neg((P#Q),(P1&Q1)):-!,neg(P,P1),neg(Q,Q1). (Se niega el primer elemento del predicado, así como se niegan las fórmulas interiores)
+neg(P,(~P)). (Caso base)
+3 fase: Skolemización
+En este proceso se eliminaran los cuantificadores existanciales
+Este predicado tiene tres argumentos: la formula original, la formula transformada y una lista con las variables que han sido introducidas por los cuantificadores universales
+Otros predicados nuevos usados en esta fase son subst(V1,V2,F1,F2) que comprueba la sustitución de V2 por V1 cada vez que aparezca en las formulas F1 y F2; y gensym(X,Y) que instancia en Y un nuevo átomo construido apartir del átomo X, esto nos generara constantes de Skolem.
+skolem(all(X,P),all(X,P1),Vars):-!,skolem(P,P1,[X|Vars]). (se introducen cuantificadores en Vars)
+skolem(exists(X,P),P2,Vars):- !, gensym(f,F),Sk=..[F|Vars],subst(X,Sk,P,P1),skolem(P1,P2,Vars).  (Mediante gensym se generauna constante de Skolem F, en sk se guarda la variable que será sustituida mediante subst, finalmente se hará Skolem con la formula obtenida)
+skolem((P # Q),(P1 # Q1),Vars):-!,skolem(P,P1,Vars),skolem(Q,Q1,Vars).  (Hace skolem sobre P Y Q)
+skolem((P & Q),(P1 & Q1),Vars):-!,skolem(P,P1,Vars),skolem(Q,Q1,Vars). (Hace skolem sobre P Y Q)
+skolem(P,P,_).(Caso base)
+
