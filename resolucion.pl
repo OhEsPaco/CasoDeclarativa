@@ -87,3 +87,21 @@ pdisj([L]) :- !, write(L).
 pdisj([L|Ls]) :- write(L), write(' # '), pdisj(Ls). 
 pconj([L]):-!,write(L).
 pconj([L|Ls]):-write(L),write(' & '),pconj(Ls).
+
+resolverClausulas(cl(L1,L2),cl(L3,L4),Resolvente):-
+	unirListas(L1,L3,Positivas), 
+	unirListas(L2,L4,Negativas),
+	eliminarOcurrencias(Positivas,Negativas,PositivasSinNegativas),
+	eliminarOcurrencias(Negativas,Positivas,NegativasSinPositivas),
+	Resolvente=cl(PositivasSinNegativas,NegativasSinPositivas).
+
+eliminarOcurrencias([],_,[]).
+eliminarOcurrencias([H|T],L,Salida):-
+	(member(H,L)->eliminarOcurrencias(T,L,Salida);
+	(eliminarOcurrencias(T,L,L2),Salida=[H|L2])).
+
+/*Une dos listas y elimina los duplicados*/
+unirListas(L1,L2,L3):-append(L1,L2,L12),eliminarDuplicados(L12,L3).
+eliminarDuplicados([], []).
+eliminarDuplicados([H | T], ListaSinDups) :- member(H, T), eliminarDuplicados(T, ListaSinDups),!.
+eliminarDuplicados([H | T], [H | ListaSinDups]) :- not(member(H, T)), eliminarDuplicados(T, ListaSinDups),!.
