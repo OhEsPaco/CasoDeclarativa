@@ -88,8 +88,10 @@ pdisj([L|Ls]) :- write(L), write(' # '), pdisj(Ls).
 pconj([L]):-!,write(L).
 pconj([L|Ls]):-write(L),write(' & '),pconj(Ls).
 
-
+%apuntad aqui los test que vayais haciendo
 test1():-esArgumentoCorrecto([~ p -> q & r, s & q-> ~ r,t -> ~ u # s],t -> ~u # p).
+test2():-esArgumentoCorrecto([p -> r , q <-> r,q & s, s->t,p],t).
+
 
 /*translate(Premises,Conclussion,Clauses) :-*/
 esArgumentoCorrecto(Premisas,Conclussion):-translate(Premisas,Conclussion,Clauses),sld(Clauses).
@@ -106,10 +108,9 @@ esArgumentoCorrecto(Premisas,Conclussion):-translate(Premisas,Conclussion,Clause
 %((Compatible=no)->(sld(T,NN));(append([Resolvente|T],[H],NClausulas),sld(NClausulas,NN)));nl,write(Resolvente),true).
 
 %Yo diria que es la mejor
-sld([H|T]):-resolver(H,T,Resolvente,Compatible),
-((Resolvente\==cl([],[]))->((Compatible=no)->(sld(T));
-(sld([Resolvente|T])));
-nl,write(Resolvente),true).
+sld(Clauses):-sld(Clauses,Clauses). %Hay que tener cuidado al generar un resolvente de que no esté entre las clasulas originales
+sld([H|T],Clausulas):-resolver(H,T,Resolvente,Compatible),
+((Resolvente\==cl([],[]))->((Compatible=no)->(sld(T,Clausulas));( member(Resolvente,Clausulas)->sld(T,Clausulas); sld([Resolvente|T],Clausulas) )); nl,write(Resolvente),true).
 
 resolver(Clausula,[],Clausula,no):-!.
 resolver(Clausula,[H|_],Resolvente,ClausulaCompatible):-resolverClausulas(Clausula,H,Resolvente,ClausulaCompatible),ClausulaCompatible=si,nl,
