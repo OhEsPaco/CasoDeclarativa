@@ -88,12 +88,54 @@ pdisj([L|Ls]) :- write(L), write(' # '), pdisj(Ls).
 pconj([L]):-!,write(L).
 pconj([L|Ls]):-write(L),write(' & '),pconj(Ls).
 
-resolverClausulas(cl(L1,L2),cl(L3,L4),Resolvente):-
+
+test1():-esArgumentoCorrecto([~ p -> q & r, s & q-> ~ r,t -> ~ u # s],t -> ~u # p).
+
+/*translate(Premises,Conclussion,Clauses) :-*/
+esArgumentoCorrecto(Premisas,Conclussion):-translate(Premisas,Conclussion,Clauses),sld(Clauses).
+
+
+%Funciona
+%sld(_,N):-N>=10000,nl,write("No encontrado en tiempo razonable").
+%sld(Clausulas,N):-N<10000,NN is N + 1,Clausulas=[H|T],resolver(H,T,Resolvente,Compatible),((Resolvente\==cl([],[]))->
+%((Compatible=no)->(append(T,[H],NClausulas),sld(NClausulas,NN));(append(T,[Resolvente,H],NClausulas),sld(NClausulas,NN)));nl,write(Resolvente),true).
+
+%Parece que funciona mejor
+%sld(_,N):-N>=10000,nl,write("No encontrado en tiempo razonable").
+%sld(Clausulas,N):-N<10000,NN is N + 1,Clausulas=[H|T],resolver(H,T,Resolvente,Compatible),((Resolvente\==cl([],[]))->
+%((Compatible=no)->(sld(T,NN));(append([Resolvente|T],[H],NClausulas),sld(NClausulas,NN)));nl,write(Resolvente),true).
+
+
+sld([H|T]):-resolver(H,T,Resolvente,Compatible),
+((Resolvente\==cl([],[]))->((Compatible=no)->(sld(T));
+(sld([Resolvente|T])));
+nl,write(Resolvente),true).
+
+resolver(Clausula,[],Clausula,no):-!.
+resolver(Clausula,[H|_],Resolvente,ClausulaCompatible):-resolverClausulas(Clausula,H,Resolvente,ClausulaCompatible),ClausulaCompatible=si,nl,
+write(Clausula),write(" + "),write(H),write(" = "),write(Resolvente),!.
+
+
+resolver(Clausula,[H|T],Resolvente,ClausulaCompatible):-resolverClausulas(Clausula,H,_,CC),
+ CC=no,
+ resolver(Clausula,T,Resolvente,ClausulaCompatible),!.
+
+/*Resuelve dos clausulas y nos dice si son compatibles, es decir, que se puede eliminar algo de alguna*/
+resolverClausulas(cl(L1,L2),cl(L3,L4),Resolvente,ClausulaCompatible):-
 	unirListas(L1,L3,Positivas), 
 	unirListas(L2,L4,Negativas),
 	eliminarOcurrencias(Positivas,Negativas,PositivasSinNegativas),
 	eliminarOcurrencias(Negativas,Positivas,NegativasSinPositivas),
-	Resolvente=cl(PositivasSinNegativas,NegativasSinPositivas).
+	Resolvente=cl(PositivasSinNegativas,NegativasSinPositivas),
+	length(Positivas, L_Positivas),
+	length(PositivasSinNegativas, L_PositivasSinNegativas),
+	length(Negativas, L_Negativas),
+	length(NegativasSinPositivas, L_NegativasSinPositivas),
+	((L_Positivas=:=L_PositivasSinNegativas,L_Negativas=:=L_NegativasSinPositivas)->ClausulaCompatible=no;ClausulaCompatible=si).
+	
+	
+	
+	
 
 eliminarOcurrencias([],_,[]).
 eliminarOcurrencias([H|T],L,Salida):-
