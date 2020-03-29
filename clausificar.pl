@@ -8,8 +8,8 @@ Angel Sanchez Gonzalez*/
 /*Dada una lista con las premisas y la conclusion devuelve una lista de clausulas*/
 translate(Premises,Conclussion,Clauses) :-
     addPremisesAndNegateConclussion(Premises,Conclussion,X0), /* Stage 0*/
-    implout(X0,Xl), /* Stage 1 */
-    negin(Xl,X2), /* Stage 2 */
+    elimimp(X0,Xl), /* Stage 1 */
+    negacion(Xl,X2), /* Stage 2 */
     skolem(X2,X3,[]), /* Stage 3 */
     univout(X3,X4), /* Stage 4 */
     conjn(X4,X5), /* Stage 5 */
@@ -19,30 +19,34 @@ translate(Premises,Conclussion,Clauses) :-
     addPremisesAndNegateConclussion([],Conclussion,~Conclussion).
     addPremisesAndNegateConclussion([H|T],Conclussion,H&Conc):-addPremisesAndNegateConclussion(T,Conclussion,Conc).
     
-    implout((P<->Q),((P1 & Q1)#(~P1 & ~Q1))):-!,implout(P,P1),implout(Q,Q1).
-    implout((P->Q),(~P1 # Q1)):-!,implout(P,P1),implout(Q,Q1).
-    implout((P&Q),(P1 & Q1)):-!,implout(P,P1),implout(Q,Q1).
-    implout((P#Q),(P1 # Q1)):-!,implout(P,P1),implout(Q,Q1).
-    implout((~P),(~P1)):-!,implout(P,P1).
-    implout(P,P).
     
-    %% Moving Negation Inwards
-    negin((~P),P1):- !, neg(P,P1).
-    negin((P & Q),(P1 & Q1)):- !, negin(P,P1), negin(Q,Q1).
-    negin((P # Q),(P1 # Q1)):- !, negin(P,P1), negin(Q,Q1).
-    negin(P,P).
-    neg((~P),P1):-!,negin(P,P1).
+	/*Mediante este predicado se eliminan los implicadores de la lista de premisas*/
+    elimimp((P<->Q),((P1 & Q1)#(~P1 & ~Q1))):-!,elimimp(P,P1),elimimp(Q,Q1).
+    elimimp((P->Q),(~P1 # Q1)):-!,elimimp(P,P1),elimimp(Q,Q1).
+    elimimp((P&Q),(P1 & Q1)):-!,elimimp(P,P1),elimimp(Q,Q1).
+    elimimp((P#Q),(P1 # Q1)):-!,elimimp(P,P1),elimimp(Q,Q1).
+    elimimp((~P),(~P1)):-!,elimimp(P,P1).
+    elimimp(P,P).
+    
+    
+	/*El predicado negacion se ocupa de devolver la formula con el proceso de negacion ya realizado */
+    negacion((~P),P1):- !, neg(P,P1).
+    negacion((P & Q),(P1 & Q1)):- !, negacion(P,P1), negacion(Q,Q1).
+    negacion((P # Q),(P1 # Q1)):- !, negacion(P,P1), negacion(Q,Q1).
+    negacion(P,P).
+    
+	/*el predicado neg se ocupa de realizar la negacion de la formula*/
+    neg((~P),P1):-!,negacion(P,P1).
     neg((P&Q),(P1#Q1)):-!,neg(P,P1),neg(Q,Q1).
     neg((P#Q),(P1&Q1)):-!,neg(P,P1),neg(Q,Q1).
     neg(P,(~P)).
     
-    %% Skolemising
+    /*En esta fase se eliminan los cuantificadores existenciales*/
     skolem((P # Q),(P1 # Q1),Vars):-
                             !,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
     skolem((P & Q),(P1 & Q1),Vars):-
                             !,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
     skolem(P,P,_).
-    
     
     univout((P & Q),(P1 & Q1)) :-!, univout(P,P1), univout(Q,Q1). 
     univout((P#Q),(P1 # Q1)):-!,univout(P,P1),univout(Q,Q1).
