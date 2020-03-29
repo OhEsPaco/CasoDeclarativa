@@ -15,5 +15,11 @@ listaDeTests([
 	([p -> r->u , u & n ,n->m ,p->r], j-> r->m, true),
 	([p <-> r , q <-> r,p], q, true),
 	([p & r , q & r,q & t ,t -> ~ x ,x & ~ y,p],y , true),
-	([x -> y , y #z,z->r, ~r ,x], y, true)
+	([x -> y , y #z,z->r, ~r ,x], y, true),
+	([(~a -> ~a -> c) & c], ~a # c, true),
+	([p # c & r, c -> p], ~a # p, true),
+	([p -> q, p # (r & s)],t -> (~p -> s),true),
+	([~p -> p],~q -> p,true),
+	([p # (q # r),p -> (q # r),~r],q, true),
+	([q -> p, (r # s) -> q, r],t->p,true)
 	]).

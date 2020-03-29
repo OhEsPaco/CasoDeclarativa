@@ -5,7 +5,7 @@ Angel Sanchez Gonzalez*/
 :-use_module([operadores,sld,clausificar,listaTests]).
 
 %Dada una lista de premisas y una conclusion deduce si un argumento es correcto
-esArgumentoCorrecto(Premisas,Conclussion):-translate(Premisas,Conclussion,Clauses),sld(Clauses).
+esArgumentoCorrecto(Premisas,Conclusion):-translate(Premisas,Conclusion,Clausulas),sld(Clausulas).
 
 %Ejecuta todos los tests de la lista
 ejecutarTodosLosTests():-listaDeTests(L), ejecutarListaDeTests(L).
