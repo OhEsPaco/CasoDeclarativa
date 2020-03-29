@@ -10,10 +10,9 @@ translate(Premises,Conclussion,Clauses) :-
     addPremisesAndNegateConclussion(Premises,Conclussion,X0), /* Stage 0*/
     elimimp(X0,Xl), /* Stage 1 */
     negacion(Xl,X2), /* Stage 2 */
-    skolem(X2,X3,[]), /* Stage 3 */
-    univout(X3,X4), /* Stage 4 */
-    conjn(X4,X5), /* Stage 5 */
-    clausify(X5,Clauses,[]). /* Stage 6 */
+    univout(X2,X4), /* Stage 3 */
+    conjn(X4,X5), /* Stage 4 */
+    clausify(X5,Clauses,[]). /* Stage 5 */
     
     /*Toma una lista de premisas y las une mediante & y añade la conclusion negada*/
     addPremisesAndNegateConclussion([],Conclussion,~Conclussion).
@@ -40,13 +39,6 @@ translate(Premises,Conclussion,Clauses) :-
     neg((P&Q),(P1#Q1)):-!,neg(P,P1),neg(Q,Q1).
     neg((P#Q),(P1&Q1)):-!,neg(P,P1),neg(Q,Q1).
     neg(P,(~P)).
-    
-    /*En esta fase se eliminan los cuantificadores existenciales*/
-    skolem((P # Q),(P1 # Q1),Vars):-
-                            !,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
-    skolem((P & Q),(P1 & Q1),Vars):-
-                            !,skolem(P,P1,Vars),skolem(Q,Q1,Vars).
-    skolem(P,P,_).
     
     univout((P & Q),(P1 & Q1)) :-!, univout(P,P1), univout(Q,Q1). 
     univout((P#Q),(P1 # Q1)):-!,univout(P,P1),univout(Q,Q1).
