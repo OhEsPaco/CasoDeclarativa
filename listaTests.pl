@@ -10,5 +10,10 @@ Angel Sanchez Gonzalez*/
 %true si el argumento es correcto, false si no.
 listaDeTests([
 	([~ p -> q & r, s & q-> ~ r,t -> ~ u # s], t -> ~u # p, true),
-	([p -> r , q <-> r,q & s, s->t,p], t, true)
+	([p -> r , q <-> r,q & s, s->t,p], t, true),
+	([p -> r , q <-> r,q & s, s->v,p], ~v, true),
+	([p -> r->u , u & n ,n->m ,p->r], j-> r->m, true),
+	([p <-> r , q <-> r,p], q, true),
+	([p & r , q & r,q & t ,t -> ~ x ,x & ~ y,p],y , true),
+	([x -> y , y #z,z->r, ~r ,x], y, true)
 	]).
