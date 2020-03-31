@@ -2,16 +2,16 @@
 Angel Loro Mosqueda
 Angel Sanchez Gonzalez*/
 
-:- module(clausificar, [translate/3]).
+:- module(clausificar, [transformar/3]).
 :- use_module(operadores).
 
 /*Dada una lista con las premisas y la conclusion devuelve una lista de clausulas*/
-translate(Premisas,Conclusion,Clausulas) :-
+transformar(Premisas,Conclusion,Clausulas) :-
     concatenarPremisasYnegarConclusion(Premisas,Conclusion,X0),
     elimimp(X0,Xl),
     negacion(Xl,X2),
-    conjn(X2,X3),
-    clausify(X3,Clausulas,[]).
+    conjuncion(X2,X3),
+    clausificar(X3,Clausulas,[]).
     
 /*Toma una lista de premisas y las une mediante & y añade la conclusion negada*/
 concatenarPremisasYnegarConclusion([],Conclusion,~Conclusion).
@@ -37,28 +37,28 @@ neg((~P),P1):-!,negacion(P,P1).
 neg((P&Q),(P1#Q1)):-!,neg(P,P1),neg(Q,Q1).
 neg((P#Q),(P1&Q1)):-!,neg(P,P1),neg(Q,Q1).
 neg(P,(~P)).
-       
-conjn((P#Q),R):-!,conjn(P,P1),conjn(Q,Q1),conjn1((P1 # Q1),R).
-conjn((P&Q),(P1&Q1)):-!,conjn(P,P1),conjn(Q,Q1).
-conjn(P,P).
+ 
+/*Si tenemos como entrada (P # Q), primero debe poner P y Q en formas normales conjuntas, dicen P1 y Q1, y solo luego ver si la fórmula  es adecuado para la traducción por una de las equivalencias. El proceso debe ocurrir en este orden, porque puede suceder que ni P ni Q tenga & en el nivel superior, pero P1 y Q1 sí.*/
+conjuncion((P#Q),R):-!,conjuncion(P,P1),conjuncion(Q,Q1),conjuncion1((P1 # Q1),R).
+conjuncion((P&Q),(P1&Q1)):-!,conjuncion(P,P1),conjuncion(Q,Q1).
+conjuncion(P,P).
     
-conjn1(((P&Q)#R),(P1 & Q1)):-!,conjn((P#R),P1),conjn((Q#R),Q1).
-conjn1((P#(Q & R)),(P1 & Q1)):-!,conjn((P#Q),P1),conjn((P#R),Q1).
-conjn1(P,P).
+conjuncion1(((P&Q)#R),(P1 & Q1)):-!,conjuncion((P#R),P1),conjuncion((Q#R),Q1).
+conjuncion1((P#(Q & R)),(P1 & Q1)):-!,conjuncion((P#Q),P1),conjuncion((P#R),Q1).
+conjuncion1(P,P).
     
-%% Putting into Clauses
-    
-clausify((P & Q),C1,C2) :-
-    !, clausify(P,C1,C3), clausify(Q,C3,C2). 
-clausify(P,[cl(A,B)|Cs],Cs) :-
+/*Convierte una formula en forma clausal. 'clausificar' construye una representación interna de una lista de cláusulas, donde cada cláusula se representa como una estructura cl(A, B). En dicha estructura, A es la lista de literales que no se niegan, y B es la lista de literales que se niegan.*/
+clausificar((P & Q),C1,C2) :-
+    !, clausificar(P,C1,C3), clausificar(Q,C3,C2). 
+clausificar(P,[cl(A,B)|Cs],Cs) :-
     inclause(P,A,[],B,[]),!.
-clausify(_,C,C).
+clausificar(_,C,C).
 
 inclause((P # Q),A,A1,B,B1):-
     !,inclause(P,A2,A1,B2,B1), inclause(Q,A,A2,B,B2).
 inclause((~P),A,A,Bl,B) :-
     !, notin(P,A), putin(P,B,Bl).
-    inclause(P,A1,A,B,B) :- notin(P,B), putin(P,A,A1).
+inclause(P,A1,A,B,B) :- notin(P,B), putin(P,A,A1).
 
 notin(X,[X|_]) :-!, fail.
 notin(X,[_|L]):-!, notin(X,L).
