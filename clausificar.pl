@@ -1,6 +1,9 @@
 /*Francisco M Garcia Sanchez-Belmonte
 Angel Loro Mosqueda
-Angel Sanchez Gonzalez*/
+Angel Sanchez Gonzalez
+Esta código ha sido tomado del Anexo B del libro: Programming in Prolog de la editorial Springer.
+Autores: William F. Clacksin, Christopher S. Mellish 
+Adaptando su solucion para la realizacion de nuestro programa*/
 
 :- module(clausificar, [transformar/3]).
 :- use_module(operadores).

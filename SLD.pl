@@ -7,23 +7,33 @@ Angel Sanchez Gonzalez*/
 
 %Dada una lista de clausulas ejecuta resolucion sobre ellas
 sld(Clauses):-
-	sld(Clauses,Clauses). %Hay que tener cuidado al generar un resolvente de que no esté entre las clasulas originales
+	sld(Clauses,Clauses,[]). %Hay que tener cuidado al generar un resolvente de que no esté entre las clasulas originales
 
-sld([H|T],Clausulas):-
+%Para evitar bucles infinitos comprobamos que haya habido variación en los resolventes obtenidos en una ejecución del algoritmo
+%y en la anterior.
+sld([],Clausulas,Anterior):-not(elementos_iguales(Clausulas, Anterior)),sld(Clausulas,Clausulas,Clausulas).
+
+sld([H|T],Clausulas,Anterior):-
 	resolver(H,T,Resolvente,Compatible),
 	%Si el resolvente no es la clausula vacia seguimos
 	((Resolvente\==cl([],[]))->
 		%Si la clausula no es compatible no añadimos el resolvente
 		((Compatible=no)->
-		(sld(T,Clausulas));
+		(sld(T,Clausulas,Anterior));
 		%La clausula es compatible
 		(member(Resolvente,Clausulas)->
 			%Si es miembro de las clausulas originales no añadimos el resolvente
-			sld(T,Clausulas)
+			sld(T,Clausulas,Anterior)
 		%Si no es miembro de las clausulas originales añadimos el resolvente
-		;sld([Resolvente|T],Clausulas) ))
+		;(sld([Resolvente|T],[Resolvente|Clausulas],Anterior))))
 	%Si el resolvente es la clausula vacia hemos acabado
 	;nl,write(Resolvente),true).
+
+%Comprueba si ambas listas son iguales
+elementos_iguales(L1, L2) :-
+    sort(L1, S1),
+    sort(L2, S2),
+    S1 == S2.
 
 %Toma una clausula y una lista de clausulas y devuelve el resolvente y si es compatible
 %Compatible-> ha podido efectuar un paso de resolucion con alguna clausula de la lista

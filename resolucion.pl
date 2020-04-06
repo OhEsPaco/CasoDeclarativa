@@ -15,6 +15,6 @@ ejecutarListaDeTests([H|T]):-
 	nl,
 	H = (Premisas,(Conclusion),Resultado), 
 	write(Premisas), write(" |- "), write(Conclusion),
-	((esArgumentoCorrecto(Premisas,Conclusion),nl)->(Resultado-> write("Test ok");write("Test fallido"))
-	;(Resultado-> write("Test fallido");write("Test ok"))),nl,
+	((esArgumentoCorrecto(Premisas,Conclusion),nl)->(Resultado-> write("Test ok");nl,write("Test fallido"))
+	;(Resultado-> write("Test fallido");nl,write("Test ok"))),nl,
 	ejecutarListaDeTests(T).

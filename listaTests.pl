@@ -26,5 +26,11 @@ listaDeTests([
 	([p & (q # r), p -> s, s -> r], p,false),
 	([p # (q # r),p -> (q # r),~r],q, true),
 	([q -> p, (r # s) -> q, r],t->p,true),
-	([p # q, r, r -> s, s -> ~q], ~p,false)
+	([p # q, r, r -> s, s -> ~q], ~p,false),
+	([p], p, true),
+	([p], q, false),
+	([p -> q, p], q, true),
+	([p <-> q, p], q, true),
+	([(p & q) -> (r#s), p, q, ~s], r, true),
+	([p -> q, p#q, p#(~q)], p&q, true)
 	]).
